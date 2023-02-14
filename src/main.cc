@@ -35,25 +35,26 @@ POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************************************/
 
 #include <stdio.h>
-
+#include <omp.h>
 #include "macsim.h"
 
 int main(int argc, char** argv) {
-  macsim_c* sim;
+    macsim_c* sim;
 
-  // Instantiate
-  sim = new macsim_c();
+    // Instantiate
+    sim = new macsim_c();
 
-  // Initialize Simulation State
-  sim->initialize(argc, argv);
+    // Initialize Simulation State
+    sim->initialize(argc, argv);
 
-  // Run simulation
-  // report("run core (single threads)");
-  while (sim->run_a_cycle())
-    ;
+    // Run simulation
+    // report("run core (single threads)");
 
-  // Finialize Simulation State
-  sim->finalize();
+    while (sim->run_a_cycle())
+      ;
+
+    // Finialize Simulation State
+    sim->finalize();
 
   return 0;
 }

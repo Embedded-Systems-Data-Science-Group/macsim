@@ -39,6 +39,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <sstream>
 #include <sys/time.h>
+#include <omp.h>
+#include <map>
 
 #include "macsim.h"
 #include "assert_macros.h"
@@ -927,9 +929,15 @@ int macsim_c::run_a_cycle() {
 #endif /* USING_SST */
 
   // core execution loop
-  for (int kk = 0; kk < m_num_sim_cores; ++kk) {
+
+
+  // Multithreaded:
+  #pragma omp parallel for
+  for (int kk = 0; kk < m_num_sim_cores; ++kk) { 
     run_a_cycle_core(kk, pll_locked); 
   }
+  // Ensure no threads are running
+  #pragma omp barrier
 
   // increase simulation cycle
   m_simulation_cycle++;
@@ -953,6 +961,7 @@ void macsim_c::run_a_cycle_core(int kk, bool pll_locked) {
     Counter pivot = m_core_cycle[0] + 1;
 
     unsigned int ii = (kk + pivot) % m_num_sim_cores;
+    // unsigned int ii = kk;
 
     core_c* core = m_core_pointers[ii];
     string core_type = core->get_core_type();

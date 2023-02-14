@@ -47,8 +47,8 @@ env['CPPDEFINES'] = ['LONG_COUNTERS', 'NO_MPI']
 env['LIBPATH']    = ['/usr/lib', '/usr/local/lib']
 
 ## MAC OS X does not support static linking
-if sys.platform != "darwin" and flags.get('qsim') != '1':
-  env['LINKFLAGS']  = ['--static']
+# if sys.platform != "darwin" and flags.get('qsim') != '1':
+  # env['LINKFLAGS']  = ['--static']
 # env['CXX']        = ['icpc']
 
 
@@ -62,8 +62,9 @@ elif flags['gprof'] == '1':
   env['LINKFLAGS'].append('-pg')
 ## OPT build
 else:
-  env['CPPFLAGS'] = '-O3 -std=c++14 -funroll-loops %s' % warn_flags
+  env['CPPFLAGS'] = '-O3 -std=c++14 -funroll-loops -fopenmp %s' % warn_flags
   env['CPPDEFINES'].append('NO_DEBUG')
+  env['LINKFLAGS'].append('-fopenmp')
 
 if flags['val'] == '1':
   env['CPPDEFINES'].append('GPU_VALIDATION')
