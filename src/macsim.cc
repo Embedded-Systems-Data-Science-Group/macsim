@@ -928,13 +928,36 @@ int macsim_c::run_a_cycle() {
 
   // core execution loop
   for (int kk = 0; kk < m_num_sim_cores; ++kk) {
+    run_a_cycle_core(kk, pll_locked); 
+  }
+
+  // increase simulation cycle
+  m_simulation_cycle++;
+  STAT_EVENT(CYC_COUNT_TOT);
+
+  // m_termination_check[0] cpu [1] gpu
+
+  if (++m_clock_internal == m_clock_lcm) {
+    m_clock_internal = 0;
+    for (int ii = 0; ii < 3 + m_num_sim_cores; ++ii) {
+      m_domain_count[ii] = 0;
+      m_domain_next[ii] = 0;
+    }
+  }
+
+  return 1;  // simulation not finished
+}
+
+void macsim_c::run_a_cycle_core(int kk, bool pll_locked) {
     // use pivot to randomize core run_cycle pattern
+    Counter pivot = m_core_cycle[0] + 1;
+
     unsigned int ii = (kk + pivot) % m_num_sim_cores;
 
     core_c* core = m_core_pointers[ii];
     string core_type = core->get_core_type();
     if (m_clock_internal != m_domain_next[ii]) {
-      continue;
+      return;
     } else {
       GET_NEXT_CYCLE(ii);
       if (m_termination_check[ii] == false) {
@@ -953,7 +976,7 @@ int macsim_c::run_a_cycle() {
 
     // core ended or not started
     if (m_sim_end[ii] || !m_core_started[ii]) {
-      continue;
+      return;
     }
 
     // check whether all ops in this core have been completed.
@@ -1005,22 +1028,6 @@ int macsim_c::run_a_cycle() {
     if (m_sim_end[ii] || m_core_end_trace[ii]) core->check_heartbeat(true);
   }
 
-  // increase simulation cycle
-  m_simulation_cycle++;
-  STAT_EVENT(CYC_COUNT_TOT);
-
-  // m_termination_check[0] cpu [1] gpu
-
-  if (++m_clock_internal == m_clock_lcm) {
-    m_clock_internal = 0;
-    for (int ii = 0; ii < 3 + m_num_sim_cores; ++ii) {
-      m_domain_count[ii] = 0;
-      m_domain_next[ii] = 0;
-    }
-  }
-
-  return 1;  // simulation not finished
-}
 
 // =======================================
 // Simulation end cleanup

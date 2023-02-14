@@ -101,6 +101,8 @@ public:
   /**
    * Finalize simulation (wrapper)
    */
+  void run_a_cycle_core(int kk, bool pll_locked);
+
   void finalize();
 
   /**

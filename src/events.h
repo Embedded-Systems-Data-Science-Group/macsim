@@ -30,11 +30,9 @@ COPYRIGHT PLACEHOLDER
   LINE_TYPE_STAT,
 */
 
-
 #include <string>
 
 class AbstractEvent;
-
 
 class AbstractEvent {
 public:
@@ -53,14 +51,12 @@ public:
     
 };
 
-
 class MemoryEvent : public AbstractEvent {
 
 public:
     MemoryEvent(const std::string& str, long ID, long domain) : AbstractEvent(str, ID, domain) {}
     ~MemoryEvent() = default;
 };
-
 
 class CoreEvent : public AbstractEvent {
     public:
