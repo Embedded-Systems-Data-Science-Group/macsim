@@ -21,3 +21,5 @@ Makefile
 Makefile.in
 *.dirstamp
 sst-unit-test/*.out
+tools/x86_trace_generator/pin-3.13-98189-g60a6ef199-gcc-linux/*
+bound_weave/*
