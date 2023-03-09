@@ -34,10 +34,15 @@ POSSIBILITY OF SUCH DAMAGE.
  * Description  : main function
  *********************************************************************************************/
 
+#include <cstdint>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <string>
 #include <sstream>
+#include <onnxruntime_c_api.h>
+#include <onnxruntime_cxx_api.h>
 #include <sys/time.h>
 #include <omp.h>
 #include <map>
@@ -741,6 +746,15 @@ void macsim_c::initialize(int argc, char** argv) {
   // initialize some of my output streams to the standards */
   init_output_streams();
 
+  // Intialize ONNX
+  printf("Initializing ONNX\n");
+  initialize_onnx();
+
+  // Test Run of ONNX/
+  printf("Inferencing ONNX\n");
+  inference_onnx();
+
+
 #ifdef IRIS
   REPORT("Initializing sim IRIS\n");
   manifold::kernel::Manifold::Init(0, NULL);
@@ -932,12 +946,12 @@ int macsim_c::run_a_cycle() {
 
 
   // Multithreaded:
-  #pragma omp parallel for
+//  #pragma omp parallel for
   for (int kk = 0; kk < m_num_sim_cores; ++kk) { 
     run_a_cycle_core(kk, pll_locked); 
   }
   // Ensure no threads are running
-  #pragma omp barrier
+//  #pragma omp barrier
 
   // increase simulation cycle
   m_simulation_cycle++;
@@ -1120,6 +1134,70 @@ int macsim_c::get_current_frequency_core(int core_id) {
 int macsim_c::get_current_frequency_uncore(int type) {
   return m_domain_freq[m_num_sim_cores + type];
 }
+void macsim_c::initialize_onnx() {
+
+  // TODO: Refactor to separate object.
+  Ort::SessionOptions opts;
+  opts.SetIntraOpNumThreads(4);
+  env_ = make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "test");
+
+  session_ = make_unique<Ort::Session>(*env_, "/home/startwarfields/Github/macsim/model.onnx", opts);
+
+}
+void macsim_c::inference_onnx() {
+  Ort::RunOptions run_options;
+  run_options.SetRunLogVerbosityLevel(0);
+//  run_options.SetRunLogVerbosityLevel(4);
+            
+  const char* input_names[] = {"input"};
+  const char* output_names[] = {"output_label", "output_probability"};
+  std::vector<float> input_vec = {5.1,3.5,1.4,0.2};
+//  std::vector<std::vector<//float>> output_vec(2,3); // resize the vector to hold 3 values
+  std::vector<int64_t> input_shape = {1, 4}; // use int64_t instead of int
+
+  auto memory_info_ = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
+  auto default_allocator = make_unique<Ort::AllocatorWithDefaultOptions>();
+  const int64_t input_size = input_vec.size();
+ // const int64_t output_size = output_vec.size();
+
+  auto input_tensor_ = Ort::Value::CreateTensor<float>(memory_info_, input_vec.data(), input_size,
+                                                       input_shape.data(), input_shape.size());
+  //auto output_tensor_ = Ort::Value::CreateTensor<float>(memory_info_, output_vec.data(), output_size,
+//                                                        output_shape.data(), output_shape.size());
+  
+
+  auto output_tensors = session_->Run(run_options, input_names, &input_tensor_, 1,
+            output_names, 2);
+    int64 name = *output_tensors[0].GetTensorMutableData<int64>();
+    auto outputInfo = output_tensors[0].GetTensorTypeAndShapeInfo();
+    std::cout << "GetElementType: " << outputInfo.GetElementType() << "\n";
+    std::cout << "Dimensions of the output: " << outputInfo.GetShape().size() << "\n";
+    std::cout << "Shape of the output: ";
+    for (unsigned int shapeI = 0; shapeI < outputInfo.GetShape().size(); shapeI++)
+      std::cout << outputInfo.GetShape()[shapeI] << ", ";
+
+    std::cout << name << std::endl;
+    auto memap = output_tensors[1].GetValue(0, *default_allocator.get());
+    std::cout << "============Predictions==========" << std::endl;
+
+    auto keys = memap.GetValue(0, *default_allocator.get());
+    
+
+    auto values = memap.GetValue(1, *default_allocator.get());
+
+    for (int i = 0; i < 3; i++)
+    {
+      int64 i_key = keys.GetTensorMutableData<int64>()[i];
+      float i_value = values.GetTensorMutableData<float>()[i];
+      std::cout << "Class: " << i_key << " Prediction: " << i_value << std::endl; 
+    }
+   
+//  printf("%f", *my_float);
+
+
+
+ 
+} 
 
 #ifdef USING_SST
 void macsim_c::registerCallback(

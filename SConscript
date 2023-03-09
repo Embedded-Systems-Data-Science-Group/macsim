@@ -43,8 +43,8 @@ for key,val in os.environ.items():
     env[key] = val
 
 env['CPPPATH']    = ['#src']
-env['CPPDEFINES'] = ['LONG_COUNTERS', 'NO_MPI']
-env['LIBPATH']    = ['/usr/lib', '/usr/local/lib']
+env['CPPDEFINES'] = ['LONG_COUNTERS']
+env['LIBPATH']    = ['/usr/lib', '/usr/local/lib', '/usr/lib/onnxruntime']
 
 ## MAC OS X does not support static linking
 # if sys.platform != "darwin" and flags.get('qsim') != '1':
@@ -62,7 +62,7 @@ elif flags['gprof'] == '1':
   env['LINKFLAGS'].append('-pg')
 ## OPT build
 else:
-  env['CPPFLAGS'] = '-O3 -std=c++14 -funroll-loops -fopenmp %s' % warn_flags
+  env['CPPFLAGS'] = '-O3 -std=c++14 -funroll-loops -fopenmp -lonnxruntime %s' % warn_flags
   env['CPPDEFINES'].append('NO_DEBUG')
   env['LINKFLAGS'].append('-fopenmp')
 
@@ -74,6 +74,10 @@ if flags['qsim'] == '1':
   env['CPPPATH']    += [os.environ['QSIM_PREFIX'] + "/include", '#src/rwqueue']
   env['CPPPATH']    += [os.environ['XED_HOME'] + "/include"]
   env['LIBPATH']    += [os.environ['QSIM_PREFIX'] + "/lib", os.environ['XED_HOME'] + "/lib"]
+
+env.Append(LIBS=['onnxruntime'])
+env.Append(RPATH='/usr/lib/onnxruntime')
+
 
 
 #########################################################################################
@@ -291,7 +295,7 @@ macsim_src = [
 #########################################################################################
 # Libraries
 #########################################################################################
-libraries = ['z']
+libraries = ['z','onnxruntime']
 
 if flags['power'] == '1':
   libraries.append('pthread')
@@ -323,7 +327,7 @@ env.Program(
     LIBS=libraries, 
 )
 
-
+libraries.append('onnxruntime')
 #########################################################################################
 # Clean
 #########################################################################################

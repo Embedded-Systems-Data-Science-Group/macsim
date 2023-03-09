@@ -41,6 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <sys/time.h>
 #include <memory>
+#include <onnxruntime_cxx_api.h>
 
 #include "global_defs.h"
 #include "global_types.h"
@@ -188,6 +189,20 @@ public:
    */
   void fini_sim(void);
 
+  /*
+   * Initialize ONNX Runtime for ML
+   * Note: This has high cost 
+   */
+  void initialize_onnx(void);
+
+  /*
+   * Inference ONNX Runtime
+   * TODO: Change Function Signature 
+   */
+  void inference_onnx(void);
+
+
+
 #ifdef IRIS
   /**
    * Initialize iris configuration
@@ -317,6 +332,20 @@ private:
   queue<int> m_freq;
 
   int m_pll_lockout; /**< pll time counter to lock on a frequency */
+  // ONNX Runtime Variables
+  int file_location;
+  std::unique_ptr<Ort::Env> env_;
+  std::unique_ptr<Ort::Session> session_;
+//  std::unique_ptr<Ort::MemoryInfo> memory_info_;
+  //Ort::Session session_{env, L"model.onnx", Ort::SessionOptions{nullptr}};
+
+  /*Ort::Value input_tensor_{nullptr};
+  std::array<int64_t, 4> input_shape_{1, 1, width_, height_};
+
+  Ort::Value output_tensor_{nullptr};
+  std::array<int64_t, 2> output_shape_{1, 10};
+  */
+
 
 #ifdef USING_SST
 #include "callback.h"

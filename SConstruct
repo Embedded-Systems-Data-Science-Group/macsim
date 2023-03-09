@@ -45,7 +45,7 @@ def CheckCPP14():
 ## Check c++14 support
 def pre_compile_check():
   ## Environment
-  env = Environment()
+  env = Environment(ENV = {'PATH' : os.environ['PATH']})
   custom_vars = set(['AS', 'AR', 'CC', 'CXX', 'HOME', 'LD_LIBRARY_PATH', 'PATH', 'RANLIB'])
 
   for key,val in os.environ.items():
@@ -65,6 +65,9 @@ pre_compile_check()
 
 ## Configuration
 flags = {}
+
+path = ['/opt/intel/oneapi/compiler/2023.0.0/linux/bin/icpx']
+env = Environment(ENV = {'PATH' : os.environ['PATH']},CC=path, CXX=path)
 
 
 ## Configuration from file
@@ -116,6 +119,9 @@ elif flags['gprof'] == '1':
   Clean('.', '.gpf_build')
 ## opt build
 else:
+  # Use intel compiler:
+  env['CC'] = 'icx'
+  env['CXX'] = 'icpx'
   SConscript('SConscript', variant_dir='.opt_build', duplicate=0, exports='flags')
   Clean('.', '.opt_build')
 
